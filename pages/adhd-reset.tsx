@@ -596,6 +596,8 @@ function TodayTab() {
   const total = visibleTasks.length;
   const completed = visibleTasks.filter(t => getStatus(t.id) === "done").length;
 
+  const totalElapsed = TODAY_TASKS.reduce((sum, t) => sum + getElapsed(t.id), 0);
+
   const handleTaskClick = (id: string) => {
     setMenuOpenId(prev => prev === id ? null : id);
   };
@@ -627,29 +629,6 @@ function TodayTab() {
       <Card style={{ marginBottom: 16 }}>
         <ProgressBar completed={completed} total={total} />
       </Card>
-
-      {/* MVP toggle */}
-      <div style={{
-        background: "#180D2A", border: `1px solid #2D1A4A`, borderRadius: 12,
-        padding: "12px 16px", marginBottom: 16,
-        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
-      }}>
-        <div>
-          <div style={{ fontSize: 12, fontWeight: 800, color: C.yellow, marginBottom: 2 }}>⚡ Minimum Viable Win</div>
-          <div style={{ fontSize: 12, color: C.muted }}>Lost steam? Switch to this. 2 tasks. Still counts.</div>
-        </div>
-        <button
-          onClick={() => setMvp(m => !m)}
-          style={{
-            background: mvp ? C.yellow : C.surface, color: mvp ? "#000" : C.muted,
-            border: `1px solid ${mvp ? C.yellow : C.border}`,
-            borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 800,
-            cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.2s",
-          }}
-        >
-          {mvp ? "MVP ON" : "Switch to MVP"}
-        </button>
-      </div>
 
       {/* Task list */}
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -774,6 +753,45 @@ function TodayTab() {
           Do tasks in order. Don't skip ahead. A finished task beats a perfect one.
         </div>
       )}
+
+      {/* Total time worked */}
+      {totalElapsed > 0 && (
+        <div style={{
+          marginTop: 20, padding: "14px 18px", borderRadius: 12,
+          background: "#0E0B1A", border: `1px solid #2D1A4A`,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          <div style={{ fontSize: 12, color: C.muted, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            Total time worked today
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: C.accent, fontVariantNumeric: "tabular-nums" }}>
+            ⏱ {formatElapsed(totalElapsed)}
+          </div>
+        </div>
+      )}
+
+      {/* MVP toggle */}
+      <div style={{
+        background: "#180D2A", border: `1px solid #2D1A4A`, borderRadius: 12,
+        padding: "12px 16px", marginTop: 20,
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+      }}>
+        <div>
+          <div style={{ fontSize: 12, fontWeight: 800, color: C.yellow, marginBottom: 2 }}>⚡ Minimum Viable Win</div>
+          <div style={{ fontSize: 12, color: C.muted }}>Lost steam? Switch to this. 2 tasks. Still counts.</div>
+        </div>
+        <button
+          onClick={() => setMvp(m => !m)}
+          style={{
+            background: mvp ? C.yellow : C.surface, color: mvp ? "#000" : C.muted,
+            border: `1px solid ${mvp ? C.yellow : C.border}`,
+            borderRadius: 8, padding: "6px 14px", fontSize: 12, fontWeight: 800,
+            cursor: "pointer", fontFamily: "inherit", flexShrink: 0, transition: "all 0.2s",
+          }}
+        >
+          {mvp ? "MVP ON" : "Switch to MVP"}
+        </button>
+      </div>
     </div>
   );
 }
