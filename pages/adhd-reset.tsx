@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 
 // ─── DATA ───────────────────────────────────────────────────────────────────
 
@@ -12,8 +12,8 @@ const TODAY_TASKS = [
 ];
 
 const TODAY_BREAKS = [
-  { after: 2, label: "☕ Break", duration: "10–15 min", note: "Drink something. Sit down. Don't clean." },
-  { after: 4, label: "🍔 Break", duration: "20–30 min", note: "Eat a real meal. Leave the apartment if you can." },
+  { id: "break-1", after: 2, label: "☕ Break", duration: "10–15 min", note: "Drink something. Sit down. Don't clean." },
+  { id: "break-2", after: 4, label: "🍔 Break", duration: "20–30 min", note: "Eat a real meal. Leave the apartment if you can." },
 ];
 
 const ZONES = [
@@ -596,7 +596,8 @@ function TodayTab() {
   const total = visibleTasks.length;
   const completed = visibleTasks.filter(t => getStatus(t.id) === "done").length;
 
-  const totalElapsed = TODAY_TASKS.reduce((sum, t) => sum + getElapsed(t.id), 0);
+  const totalElapsed = [...TODAY_TASKS.map(t => t.id), ...TODAY_BREAKS.map(b => b.id)]
+    .reduce((sum, id) => sum + getElapsed(id), 0);
 
   const handleTaskClick = (id: string) => {
     setMenuOpenId(prev => prev === id ? null : id);
@@ -650,8 +651,20 @@ function TodayTab() {
             : isPaused ? `0 0 0 1px ${C.yellow}, 0 0 12px ${C.yellow}33`
             : "none";
 
+          const bStatus = breakAfter ? getStatus(breakAfter.id) : "idle";
+          const bElapsed = breakAfter ? getElapsed(breakAfter.id) : 0;
+          const bActive = bStatus === "active";
+          const bPaused = bStatus === "paused";
+          const bDone = bStatus === "done";
+          const bMenuOpen = breakAfter ? menuOpenId === breakAfter.id : false;
+          const bBorderColor = bActive ? C.green : bPaused ? C.yellow : bDone ? "#1F1D26" : "#2D2645";
+          const bBoxShadow = bActive ? `0 0 0 1px ${C.green}, 0 0 14px ${C.green}44`
+            : bPaused ? `0 0 0 1px ${C.yellow}, 0 0 12px ${C.yellow}33` : "none";
+
           return (
-            <div key={task.id} style={{ position: "relative", zIndex: menuOpen ? 20 : 1 }}>
+            <React.Fragment key={task.id}>
+
+            <div style={{ position: "relative", zIndex: menuOpen ? 20 : 1 }}>
               <div
                 onClick={() => handleTaskClick(task.id)}
                 style={{
@@ -722,18 +735,51 @@ function TodayTab() {
                 )}
               </div>
 
-              {breakAfter && (
-                <div style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "10px 16px", borderRadius: 10,
-                  background: "#131020", border: `1px dashed #2D2645`, margin: "4px 0",
-                }}>
-                  <span style={{ fontSize: 14 }}>{breakAfter.label}</span>
+            </div>
+
+            {breakAfter && (
+              <div style={{ position: "relative", zIndex: bMenuOpen ? 20 : 1, margin: "4px 0" }}>
+                <div
+                  onClick={() => setMenuOpenId(prev => prev === breakAfter.id ? null : breakAfter.id)}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+                    padding: "10px 16px", borderRadius: 10, cursor: "pointer",
+                    background: bDone ? "#0E0B1A" : "#131020",
+                    border: `1px dashed ${bBorderColor}`,
+                    boxShadow: bBoxShadow,
+                    opacity: bDone ? 0.45 : 1,
+                    transition: "box-shadow 0.2s, border-color 0.2s, opacity 0.2s",
+                  }}
+                >
+                  <span style={{ fontSize: 14, textDecoration: bDone ? "line-through" : "none" }}>{breakAfter.label}</span>
                   <span style={{ fontSize: 12, color: C.accent, fontWeight: 700 }}>{breakAfter.duration}</span>
                   <span style={{ fontSize: 12, color: C.muted }}>{breakAfter.note}</span>
+                  {bActive && (
+                    <span style={{ fontSize: 11, fontWeight: 800, color: C.green, background: C.green + "18", border: `1px solid ${C.green}44`, borderRadius: 6, padding: "2px 8px" }}>
+                      On Break
+                    </span>
+                  )}
+                  {bPaused && (
+                    <span style={{ fontSize: 11, fontWeight: 800, color: C.yellow, background: C.yellow + "18", border: `1px solid ${C.yellow}44`, borderRadius: 6, padding: "2px 8px" }}>
+                      Paused
+                    </span>
+                  )}
+                  {(bActive || bPaused) && (
+                    <TimerBadge elapsed={bElapsed} status={bStatus} />
+                  )}
                 </div>
-              )}
-            </div>
+                {bMenuOpen && (
+                  <ActionMenu
+                    status={bStatus}
+                    onStart={() => handleAction(breakAfter.id, () => start(breakAfter.id))}
+                    onPause={() => handleAction(breakAfter.id, () => pause(breakAfter.id))}
+                    onDone={() => handleAction(breakAfter.id, () => complete(breakAfter.id))}
+                    onUndo={() => handleAction(breakAfter.id, () => undo(breakAfter.id))}
+                  />
+                )}
+              </div>
+            )}
+            </React.Fragment>
           );
         })}
       </div>
